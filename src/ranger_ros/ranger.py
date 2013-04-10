@@ -5,6 +5,9 @@ import rospy
 
 from . import aseba
 
+TICKS_PER_METER=69049
+TICKS_TO_PID = 0.01 # motor speed to send to go to 1 tick/sec
+
 NEUIL_CODE ="""
 onevent toto
 call led.line(0,0,10,100,100)
@@ -46,8 +49,8 @@ class Ranger():
         self.lwheel_pub = rospy.Publisher('/lwheel', Int16)
         self.rwheel_pub = rospy.Publisher('/rwheel', Int16)
 
-        self.lmotor_sub = rospy.Subscriber('/lmotor', Float32, self.lmotor)
-        self.rmotor_sub = rospy.Subscriber('/rmotor', Float32, self.rmotor)
+        self.lmotor_sub = rospy.Subscriber('/lwheel_vtarget', Float32, self.lmotor)
+        self.rmotor_sub = rospy.Subscriber('/rwheel_vtarget', Float32, self.rmotor)
 
         rospy.Service('/halt', Empty, self.halt)
 
@@ -77,13 +80,17 @@ class Ranger():
     def led(self):
         aseba.event("toto")
 
+    def speedtopid(self, speed):
+        ticks_sec = speed * TICKS_PER_METER
+        return ticks_sec * TICKS_TO_PID
+
     def lmotor(self, speed):
-        val = int(speed.data * 10)
+        val = int(self.speedtopid(speed.data))
         rospy.loginfo("Setting mot2 PID target to %s" % val)
         aseba.set("mot2.pid.target_speed", val, "smartrob3")
 
     def rmotor(self, speed):
-        val = int(speed.data * 10)
+        val = int(self.speedtopid(speed.data))
         rospy.loginfo("Setting mot1 PID target to %s" % val)
         aseba.set("mot1.pid.target_speed", -val, "smartrob3")
 

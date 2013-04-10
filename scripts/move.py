@@ -8,36 +8,29 @@ import rospy
 print("Use WASD to control the Ranger")
 
 rospy.init_node('ranger_ctrl')
-lmotor = rospy.Publisher('/lmotor', Float32)
-rmotor = rospy.Publisher('/rmotor', Float32)
-
-rospy.wait_for_service('halt')
-halt = rospy.ServiceProxy('halt', Empty)
+lmotor = rospy.Publisher('/lwheel_vtarget', Float32)
+rmotor = rospy.Publisher('/rwheel_vtarget', Float32)
 
 l = 0.0
 r = 0.0
 
 while True:
-    key = raw_input("WASD?")
+    key = raw_input("QA WS?")
 
-    if key.lower() == "w":
-        l += 0.1
-        r += 0.1
-    elif key.lower() == "s":
-        l -= 0.1
-        r -= 0.1
+    if key.lower() == "q":
+        l += 0.02
     elif key.lower() == "a":
-        l += 0.1
-        r -= 0.1
-    elif key.lower() == "d":
-        r += 0.1
-        l -= 0.1
+        l -= 0.02
+    elif key.lower() == "w":
+        r += 0.02
+    elif key.lower() == "s":
+        r -= 0.02
     else:
         print("Stopping")
         r = 0.0
         l = 0.0
 
-    print("L:%s      R:%s" % (l,r))
+    print("L:%s m/s     R:%s m/s" % (l,r))
 
     lmotor.publish(Float32(l))
     rmotor.publish(Float32(r))

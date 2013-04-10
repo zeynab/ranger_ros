@@ -7,5 +7,10 @@
      <rosparam param="ticks_meter">69049</rosparam>
      <rosparam param="base_width">0.396</rosparam>
   </node>
+  <node pkg="differential_drive" type="twist_to_motors.py" name="twist_to_motors">
+     <rosparam param="rate">50</rosparam>
+     <rosparam param="base_width">0.396</rosparam>
+     <remap from="twist" to="cmd_vel"/>
+  </node>
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /> 
 </launch>
