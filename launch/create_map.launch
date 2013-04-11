@@ -1,9 +1,9 @@
 <launch>
-<include file="$(find ranger_ros)/launch/drive.launch"/>
-<include file="$(find ranger_ros)/launch/3dsensor.launch"/>
-<node pkg="gmapping" type="slam_gmapping" name="slam">
-<param name="scan" value="/scan"/>
-<param name="temporalUpdate" value="1.0"/>
-</node>
+    <include file="$(find ranger_ros)/launch/drive.launch"/>
+    <include file="$(find ranger_ros)/launch/3dsensor.launch"/>
+    <node pkg="gmapping" type="slam_gmapping" name="slam">
+        <param name="scan" value="/scan"/>
+        <param name="temporalUpdate" value="0.5"/>
+    </node>
 
 </launch>
