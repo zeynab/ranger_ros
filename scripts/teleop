@@ -32,7 +32,7 @@ joystick.init()
 v_prev = 0.0
 w_prev = 0.0
 
-while done==False:
+while not rospy.is_shutdown() and done==False:
     for event in pygame.event.get(): # User did something
         if event.type == pygame.JOYBUTTONDOWN:
             print("Leaving now")
