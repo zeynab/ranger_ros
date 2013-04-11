@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
+import time
 import pygame
 import sys
 from geometry_msgs.msg import Twist
 import rospy
+
+MAX_LINEAR_SPEED = 0.2 # m/s
+MAX_ANGULAR_SPEED = 0.4 # rad/s
 
 rospy.init_node('ranger_vw_ctrl')
 twist = rospy.Publisher('/cmd_vel', Twist)
@@ -38,8 +42,8 @@ while not rospy.is_shutdown() and done==False:
             print("Leaving now")
             done = True
 
-    w = joystick.get_axis( 0 )
-    v = -joystick.get_axis( 1 )
+    w = -joystick.get_axis( 0 ) * MAX_ANGULAR_SPEED
+    v = -joystick.get_axis( 1 ) * MAX_LINEAR_SPEED
 
     # Limit to 20 frames per second
     clock.tick(20)
@@ -53,6 +57,9 @@ while not rospy.is_shutdown() and done==False:
         v_prev = v
         w_prev = w
 
-
+msg.linear.x = 0.
+msg.angular.z = 0.
+twist.publish(msg)
+time.sleep(0.5)
 pygame.quit ()
 
