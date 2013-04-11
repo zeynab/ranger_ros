@@ -86,13 +86,13 @@ class Ranger():
 
     def lmotor(self, speed):
         val = int(self.speedtopid(speed.data))
-        rospy.loginfo("Setting mot2 PID target to %s" % val)
-        aseba.set("mot2.pid.target_speed", val, "smartrob3")
+        rospy.loginfo("Setting mot1 PID target to %s" % val)
+        aseba.set("mot1.pid.target_speed", -val, "smartrob3")
 
     def rmotor(self, speed):
         val = int(self.speedtopid(speed.data))
-        rospy.loginfo("Setting mot1 PID target to %s" % val)
-        aseba.set("mot1.pid.target_speed", -val, "smartrob3")
+        rospy.loginfo("Setting mot2 PID target to %s" % val)
+        aseba.set("mot2.pid.target_speed", val, "smartrob3")
 
     def halt(self, arg):
         rospy.logdebug("Tiggering event 'halt' on aseba network")
