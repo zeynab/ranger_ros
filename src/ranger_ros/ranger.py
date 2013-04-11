@@ -6,7 +6,7 @@ import rospy
 from . import aseba
 
 TICKS_PER_METER=69049
-TICKS_TO_PID = 0.01 # motor speed to send to go to 1 tick/sec
+TICKS_TO_PID = 0.005124 # motor speed to send to go to 1 tick/sec
 
 NEUIL_CODE ="""
 onevent toto
