@@ -37,11 +37,11 @@ def set(var, value, node = None):
         print "Service call failed: %s"%e
 
 def subscribe(name, cb):
-    sub = rospy.Subscriber('/aseba/events/' + name, AsebaEvent, cb)
+    sub = rospy.Subscriber('/aseba/events/' + str(name), AsebaEvent, cb)
 
 
 def event(name, data = []):
-    pub = rospy.Publisher('/aseba/events/' + name, AsebaEvent)
+    pub = rospy.Publisher('/aseba/events/' + str(name), AsebaEvent)
     evt = AsebaEvent(stamp = rospy.Time.now(), source = 0, data = data)
     pub.publish(evt)
 
@@ -51,6 +51,15 @@ def nodes():
         return call().nodeList
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
+
+def loadaesl(filename):
+    rospy.logdebug("Uploading AESL script <%s>" % filename)
+    try:
+        call = rospy.ServiceProxy('aseba/load_script', LoadScripts)
+        return call(filename)
+    except rospy.ServiceException, e:
+        print "Service call failed: %s"%e
+
 
 def load(code, node = None, events = {}, constants = {}):
     if not node:
