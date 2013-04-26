@@ -1,0 +1,419 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+<event size="1" name="set_led_effect"/>
+<event size="2" name="set_eye"/>
+<event size="2" name="set_eyebrow"/>
+<event size="1" name="set_eyes_speed"/>
+
+<event size="1" name="enable_torque"/>
+<event size="2" name="set_motor"/>
+<event size="0" name="motor_stop"/>
+
+<event size="1" name="lwheel"/>
+<event size="1" name="rwheel"/>
+
+<event size="0" name="hearbeat"/>
+
+<!--list of constants-->
+<constant value="0" name="NONE"/>
+<constant value="1" name="GLOW_GREEN"/>
+<constant value="2" name="LEVEL_UP"/>
+<constant value="3" name="LEVEL_DOWN"/>
+<constant value="4" name="BLUSH"/>
+<constant value="5" name="PULSE_LOW_GREEN"/>
+<constant value="6" name="PULSE_LOW_RED"/>
+<constant value="7" name="SPARKLE"/>
+
+
+<!--source code of node neuil-->
+<node name="neuil">var current_effect
+
+
+var g_i = 0
+var g_c = 0
+var g_j
+var g_t
+var g_t2
+
+var b_c = 0
+var b_state = 0
+var b_t
+
+var lu_c
+var lu_t
+var lu_s 
+
+var ld_t
+var ld
+var ld_i
+
+var bl
+var bl_s
+var bl_t
+var bl_color[3]
+var bl_f[3]
+
+var sp[4]
+var spt
+var spi
+var spr
+
+var i
+
+timers[0] = 10
+
+motor.voltage[0] = 100
+motor.voltage[1] = 100
+motor.voltage[2] = 100
+motor.voltage[3] = 100
+
+motor.speed[0] = 10
+motor.speed[1] = 40
+motor.speed[2] = 40
+motor.speed[3] = 10
+
+sub set_led_mouth
+for i in 2:7 do
+	call led.set(i,event.args[0],event.args[1],event.args[2])	
+end
+
+
+sub glow_green
+if  g_c == 0 then
+	if  g_i &lt; 15 then
+		g_i = g_i + 1
+	else
+		g_i = g_i + g_i/15
+	end
+
+	if  g_i> 4270 then
+		g_i = 4270
+		g_c = 1
+	end
+elseif g_c == 1 then
+	if g_i &lt; 25 then
+		g_i = g_i - 1
+	else
+		g_i = g_i  - g_i / 25
+	end
+	if  g_i &lt;= 0 then
+		g_i = 0
+		g_c = 0
+	end
+end
+g_t = g_i / 10 - 8
+if  g_t > 127 then
+	g_t = 127
+end
+g_t2 = g_t/20
+if  g_t &lt; 0 then
+	g_t = 0
+	g_t2 = 0
+end
+if  g_t > 50 then
+	g_t = 50
+end
+call led.body(g_t2,g_t,0)
+event.args[0]=g_t2
+event.args[1]=g_t
+event.args[2]=0
+callsub set_led_mouth
+
+sub blush
+if b_state == 0 then
+	b_c++
+end
+if b_c > 80 then
+	if b_state == 2 then
+		b_c--
+		if b_c == 81 then
+			b_state = 1
+		end
+	else
+		b_c++
+		if b_c >= 126 then
+			b_state = 2
+		end
+	end
+end
+b_t = b_c / 10
+call led.set(0,b_c,0,b_t)
+call led.set(1,b_c,0,b_t)
+call led.set(8,b_c,0,b_t)
+call led.set(9,b_c,0,b_t)
+
+sub level_up
+if lu_c &lt; 10 then
+	lu_c++
+else 
+	lu_c += lu_c / 10
+end
+
+if lu_c >= 127 then
+	lu_c = 0
+	lu_s++
+end
+
+
+	call led.line(0,4,lu_t,0,0)
+	call led.line(1,4,lu_t,0,0)
+	call led.line(2,4,lu_t,0,0)
+	
+	lu_t = (lu_c + 25) % 127
+	call led.line(0,3,lu_t,0,0)
+	call led.line(1,3,lu_t,0,0)
+	call led.line(2,3,lu_t,0,0)
+	
+	lu_t = (lu_c + 50) % 127
+	call led.line(0,2,lu_t,0,0)
+	call led.line(1,2,lu_t,0,0)
+	call led.line(2,2,lu_t,0,0)
+	lu_t = (lu_c + 75) % 127
+	call led.line(0,1,lu_t,0,0)
+	call led.line(1,1,lu_t,0,0)
+	call led.line(2,1,lu_t,0,0)
+
+lu_t = (lu_c + 100) % 127
+call led.line(0,0,lu_t,0,0)
+call led.line(1,0,lu_t,0,0)
+call led.line(2,0,lu_t,0,0)
+event.args[0]=lu_t
+event.args[1]=0
+event.args[2]=0
+callsub set_led_mouth
+
+if lu_s > 3 then
+	current_effect = NONE
+	call led.all(0,0,0)
+end
+
+
+sub level_down_i
+if ld &lt; 0 then
+	ld = 0
+end
+call led.line(0,ld_i,0,ld,0)
+call led.line(1,ld_i,0,ld,0)
+call led.line(2,ld_i,0,ld,0)
+event.args[0]=0
+event.args[1]=ld
+event.args[2]=0
+callsub set_led_mouth
+
+
+sub level_down
+ld_t++
+
+if  ld_t &lt; 10 then
+	ld = 10 * ld_t
+	call led.body(0,ld,0)
+else
+	ld = 50 + 127- ld_t*5
+	ld_i = 4
+	callsub level_down_i
+	if ld == 0 then
+		ld = 100 + 127 - ld_t * 5
+		ld_i--
+		callsub level_down_i
+		if ld == 0  then
+			ld = 150 + 127 - ld_t * 5
+			ld_i--
+			callsub level_down_i
+			if  ld == 0 then
+				ld = 200 + 127 - ld_t * 5
+				ld_i--
+				callsub level_down_i
+				if  ld == 0 then
+					ld = 250 + 127 - ld_t * 5
+					ld_i--
+					callsub level_down_i
+					if ld == 0 then
+						current_effect = NONE
+					end
+				end
+			end
+		end
+	end
+end
+
+sub pulse_low
+if bl_s == 0 then
+	bl++
+end
+if bl > 80 then
+	if bl_s == 2 then
+		bl--
+		if bl == 10 then
+			bl_s = 1
+		end
+	else
+		bl++
+		if bl >= 126 then
+			b_state = 2
+		end
+	end
+end
+bl_f[0] = (bl * bl_color[0]) / 10
+bl_f[1] = (bl * bl_color[1]) / 10
+bl_f[2] = (bl * bl_color[2]) / 10
+call led.line(0,0,bl_f[0],bl_f[1],bl_f[2])
+call led.line(1,0,bl_f[0],bl_f[1],bl_f[2])
+call led.line(2,0,bl_f[0],bl_f[1],bl_f[2])
+event.args[0]=bl_f[0]
+event.args[1]=bl_f[1]
+event.args[2]=bl_f[2]
+callsub set_led_mouth
+
+
+sub sparkle
+if spt > 1 then
+	for  spi in 0:4 do
+		call math.rand(sp)
+		sp[0] = abs(sp[0]) / 205
+		call led.set(sp[0],sp[1],sp[2],sp[3])
+	end
+	for  spi in 0:20 do
+		call math.rand(spr)
+		spr = abs(spr) / 205
+		call led.set(spr,0,0,0)
+	end
+	spt = 0
+else
+	spt++
+end
+	
+
+onevent timer0
+
+if current_effect == GLOW_GREEN then
+	callsub glow_green
+elseif current_effect == BLUSH then
+	callsub blush
+elseif current_effect == LEVEL_UP then
+	callsub level_up
+elseif current_effect == LEVEL_DOWN then
+	callsub level_down
+elseif current_effect == PULSE_LOW_GREEN then
+	callsub pulse_low
+elseif current_effect == PULSE_LOW_RED then
+	callsub pulse_low
+elseif current_effect == SPARKLE then
+	callsub sparkle
+end
+
+
+call led.load(0)
+
+onevent set_led_effect
+if event.args[0] != current_effect then
+	call led.all(0,0,0)
+end
+
+current_effect = event.args[0]
+if current_effect == BLUSH then
+	b_state = 0
+end
+if current_effect == LEVEL_UP then
+		lu_c = 0
+		lu_s = 0
+end
+if  current_effect == LEVEL_DOWN then
+	ld_t = 0
+end
+if current_effect == PULSE_LOW_RED then
+	bl_color[0] = 10
+	bl_color[1] = 10
+	bl_color[2] = 0
+end
+if  current_effect == PULSE_LOW_GREEN then
+	bl_color[0] = 0
+	bl_color[1] = 10
+	bl_color[2] = 0
+end
+
+
+onevent set_eye
+	motor.target[1] = event.args[0]
+	motor.target[2] = event.args[1]
+
+onevent set_eyebrow
+	motor.target[3] = event.args[0]
+	motor.target[0] = event.args[1]
+
+onevent set_eyes_speed
+	# define speed presets
+	if  event.args[0] == 0 then
+		motor.speed[0] = 5
+		motor.speed[1] = 20
+		motor.speed[2] = 20
+		motor.speed[3] = 5
+	elseif event.args[0] == 1 then		
+		motor.speed[0] = 10
+		motor.speed[1] = 40
+		motor.speed[2] = 40
+		motor.speed[3] = 10
+	else
+		motor.speed[0] = 20
+		motor.speed[1] = 50
+		motor.speed[2] = 50
+		motor.speed[3] = 20
+	end</node>
+
+
+<!--source code of node smartrob3-->
+<node name="smartrob3">var watchdog = 15
+
+mot1.pid.enable = 0
+mot2.pid.enable = 0
+
+call battery.update()
+
+    
+onevent set_motor
+ 	mot1.pid.target_speed = -event.args[0]
+ 	mot2.pid.target_speed = event.args[1]
+
+sub motor_stop_sub
+	mot1.pid.enable = 0
+	mot2.pid.enable = 0
+
+onevent enable_torque
+	if  event.args[0] >= 1 then
+		# enable controller
+		mot1.pid.enable = 2
+		mot2.pid.enable = 2
+	 	mot1.pid.target_speed = 0
+	 	mot2.pid.target_speed = 0
+	 	call mot1.enc.reset()
+		call mot2.enc.reset()
+	else
+		# disable controller
+		mot1.pid.enable = 1
+		mot2.pid.enable = 1
+		mot1.pid.target_current = 0
+		mot2.pid.target_current = 0
+	end
+
+
+onevent motor_stop
+	callsub motor_stop_sub
+
+onevent sensors.updated
+    emit lwheel mot1.enc._pulse[0]
+    emit rwheel mot2.enc._pulse[0]
+
+	if  watchdog == 0 then
+		callsub motor_stop_sub
+	else
+		watchdog--
+	end
+
+onevent hearbeat
+	watchdog = 15
+</node>
+
+
+</network>

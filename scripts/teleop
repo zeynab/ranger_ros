@@ -3,6 +3,7 @@
 import time
 import pygame
 import sys
+from std_srvs.srv import Empty
 from geometry_msgs.msg import Twist
 import rospy
 
@@ -11,6 +12,12 @@ MAX_ANGULAR_SPEED = 0.4 # rad/s
 
 rospy.init_node('ranger_vw_ctrl')
 twist = rospy.Publisher('/cmd_vel', Twist)
+
+stop_leds = rospy.ServiceProxy('leds/stop', Empty)
+blush = rospy.ServiceProxy('leds/blush', Empty)
+sparkle = rospy.ServiceProxy('leds/sparkle', Empty)
+pulse_green = rospy.ServiceProxy('leds/pulse_green', Empty)
+pulse_red = rospy.ServiceProxy('leds/pulse_red', Empty)
 
 v = 0.0
 w = 0.0
@@ -36,26 +43,55 @@ joystick.init()
 v_prev = 0.0
 w_prev = 0.0
 
+ok_move = False
+
 while not rospy.is_shutdown() and done==False:
-    for event in pygame.event.get(): # User did something
-        if event.type == pygame.JOYBUTTONDOWN:
-            print("Leaving now")
-            done = True
-
-    w = -joystick.get_axis( 0 ) * MAX_ANGULAR_SPEED
-    v = -joystick.get_axis( 1 ) * MAX_LINEAR_SPEED
-
     # Limit to 20 frames per second
     clock.tick(20)
 
-    if w != w_prev or v != v_prev:
-        rospy.logdebug("V:%s      W:%s" % (v,w))
+    for event in pygame.event.get(): # User did something
+        if event.type == pygame.JOYBUTTONDOWN:
+            if not ok_move:
+                print("You can move now")
+                ok_move = joystick.get_button(4) # button LR (labeled 5 on joy)
 
-        msg.linear.x = v
-        msg.angular.z = w
-        twist.publish(msg)
-        v_prev = v
-        w_prev = w
+            if joystick.get_button(5):
+                print("Leaving now")
+                done = True
+
+            if joystick.get_button(0):
+                stop_leds()
+
+            if joystick.get_button(1):
+                blush()
+
+            if joystick.get_button(2):
+                pulse_green()
+
+            if joystick.get_button(3):
+                pulse_red()
+
+        if event.type == pygame.JOYBUTTONUP:
+            if ok_move:
+                print("You can not move anymore")
+                ok_move = joystick.get_button(4) # button LR (labeled 5 on joy)
+
+        if event.type == pygame.JOYAXISMOTION:
+            w = -joystick.get_axis( 0 ) * MAX_ANGULAR_SPEED
+            v = -joystick.get_axis( 1 ) * MAX_LINEAR_SPEED
+
+        if not ok_move:
+            v = 0.0
+            w = 0.0
+
+        elif w != w_prev or v != v_prev:
+            rospy.logdebug("V:%s      W:%s" % (v,w))
+
+            msg.linear.x = v
+            msg.angular.z = w
+            twist.publish(msg)
+            v_prev = v
+            w_prev = w
 
 msg.linear.x = 0.
 msg.angular.z = 0.
