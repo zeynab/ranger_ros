@@ -1,4 +1,4 @@
-
+import os
 import tempfile
 
 import roslib;roslib.load_manifest('ranger_ros')
@@ -53,12 +53,13 @@ def nodes():
         print "Service call failed: %s"%e
 
 def loadaesl(filename):
-    rospy.logdebug("Uploading AESL script <%s>" % filename)
+    filename = os.path.abspath(filename)
+    rospy.loginfo("Uploading AESL script <%s>" % filename)
     try:
         call = rospy.ServiceProxy('aseba/load_script', LoadScripts)
         return call(filename)
     except rospy.ServiceException, e:
-        print "Service call failed: %s"%e
+        rospy.logerr("Service call failed: %s" % e)
 
 
 def load(code, node = None, events = {}, constants = {}):

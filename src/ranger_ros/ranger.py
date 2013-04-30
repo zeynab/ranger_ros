@@ -1,13 +1,21 @@
+import time
 from std_msgs.msg import *
 from std_srvs.srv import Empty
 import rospy
 
 from . import aseba
 
+PREFIX="/home/lemaigna/src/ranger_ros/"
+
 TICKS_PER_METER=69049
 TICKS_TO_PID = 0.005124 # motor speed to send to go to 1 tick/sec
 
-MAX_EYE = 40    # sym around 0
+LEYE_OFFSET = 0 #23
+REYE_OFFSET = 0  #63
+LEYEB_OFFSET = 0
+REYEB_OFFSET = 0
+
+MAX_EYE = 100    # sym around 0
 MAX_EYEB = 10   # sym around 0
 
 # constants for LED effects
@@ -40,7 +48,7 @@ class Ranger():
 
         rospy.loginfo("Done. Loading Ranger scripts...")
 
-        aseba.loadaesl("scripts/scenario1.aesl")
+        aseba.loadaesl(PREFIX + "scripts/scenario1.aesl")
 
         self.lwheel_pub = rospy.Publisher('lwheel', Int16) # lwheel -> topic name
         aseba.subscribe('lwheel', self.onlwheel) # lwheel -> aseba event
@@ -50,9 +58,17 @@ class Ranger():
         self.lmotor_sub = rospy.Subscriber('lwheel_vtarget', Float32, self.lmotor)
         self.rmotor_sub = rospy.Subscriber('rwheel_vtarget', Float32, self.rmotor)
 
-        aseba.event("enable_torque", [1])
+        self.eyes(0,0)
+        #self.calibrate_eyebrows()
 
         rospy.loginfo("Done. Ranger is ready.")
+
+    def enable_motors(self):
+        aseba.event("enable_torque", [1])
+
+    def disable_motors(self):
+        aseba.event("enable_torque", [0])
+
 
     def onlwheel(self, msg):
         self.lwheel_pub.publish(-msg.data[0])
@@ -63,19 +79,40 @@ class Ranger():
     def led(self):
         aseba.event("toto")
 
-    def speedtopid(self, speed):
+    def _speedtopid(self, speed):
         ticks_sec = speed * TICKS_PER_METER
         return ticks_sec * TICKS_TO_PID
 
     def lmotor(self, speed):
-        val = int(self.speedtopid(speed.data))
+        val = int(self._speedtopid(speed.data))
         rospy.loginfo("Setting mot1 PID target to %s" % val)
         aseba.set("mot1.pid.target_speed", -val, "smartrob3")
 
     def rmotor(self, speed):
-        val = int(self.speedtopid(speed.data))
+        val = int(self._speedtopid(speed.data))
         rospy.loginfo("Setting mot2 PID target to %s" % val)
         aseba.set("mot2.pid.target_speed", val, "smartrob3")
+
+    def shake(self, speed = 0.15):
+        self.heartbeat()
+        self.enable_motors()
+        val = int(self._speedtopid(speed))
+        aseba.set("mot1.pid.target_speed", val, "smartrob3")
+        aseba.set("mot2.pid.target_speed", val, "smartrob3")
+        time.sleep(0.5)
+        aseba.set("mot1.pid.target_speed", -val, "smartrob3")
+        aseba.set("mot2.pid.target_speed", -val, "smartrob3")
+        time.sleep(0.5)
+        aseba.set("mot1.pid.target_speed", val, "smartrob3")
+        aseba.set("mot2.pid.target_speed", val, "smartrob3")
+        time.sleep(0.5)
+        aseba.set("mot1.pid.target_speed", -val, "smartrob3")
+        aseba.set("mot2.pid.target_speed", -val, "smartrob3")
+        time.sleep(0.5)
+        aseba.set("mot1.pid.target_speed", 0, "smartrob3")
+        aseba.set("mot2.pid.target_speed", 0, "smartrob3")
+ 
+
 
     def heartbeat(self):
         """ Need to be called periodically (~50ms), else the robot
@@ -83,63 +120,95 @@ class Ranger():
         """
         aseba.event("hearbeat")
 
+    def raweyes(self, eb1, eb2):
+        """
+        :param eb1: first eyebrow (value between -1.0 and 1.0)
+        :param eb2: second eyebrow (value between -1.0 and 1.0)
+        """
+        rospy.logerr("Left: %s     Right: %s" % (eb1, eb2))
+        aseba.event("set_eye", [eb1,eb2])
+
+
     def eyes(self, e1, e2):
         """
         :param e1: first eye (value between -1.0 and 1.0)
         :param e2: second eye (value between -1.0 and 1.0)
         """
-        aseba.event("set_eye", [int(clamp(e1 * MAX_EYE, -MAX_EYE, MAX_EYE)),
-                                int(clamp(e2 * MAX_EYE, -MAX_EYE, MAX_EYE))])
+        aseba.event("set_eye", [int(clamp(e1 * MAX_EYE, -MAX_EYE, MAX_EYE)) + LEYE_OFFSET,
+                                int(clamp(e2 * MAX_EYE, -MAX_EYE, MAX_EYE)) + REYE_OFFSET])
 
-    def eyebrows(self, eb1, eb2):
+    def eyebrow(self, eb1):
         """
         :param eb1: first eyebrow (value between -1.0 and 1.0)
         :param eb2: second eyebrow (value between -1.0 and 1.0)
         """
-        aseba.event("set_eyebrow", [int(clamp(eb1 * MAX_EYEB, -MAX_EYEB, MAX_EYEB)),
-                                int(clamp(eb2 * MAX_EYEB, -MAX_EYEB, MAX_EYEB))])
+        print(eb1)
+        aseba.event("set_eyebrow", [eb1,0])
 
 
-    @rosservice("halt")
-    def halt(arg):
+    def calibrate_eyebrows(self):
+        global LEYEB_OFFSET, REYEB_OFFSET
+        eyebrows(-2, 2, clamped = False)
+        time.sleep(4)
+        eyebrows(-2, 2, clamped = False)
+ 
+
+
+    def eyebrows(self, eb1, eb2, clamped = True):
+        """
+        :param eb1: first eyebrow (value between -1.0 and 1.0)
+        :param eb2: second eyebrow (value between -1.0 and 1.0)
+        """
+        if clamped:
+            l = int(clamp(eb1 * MAX_EYEB, -MAX_EYEB, MAX_EYEB)) + LEYEB_OFFSET
+            r = int(clamp(eb2 * MAX_EYEB, -MAX_EYEB, MAX_EYEB)) + REYEB_OFFSET
+        else:
+            l = int(eb1 * MAX_EYEB) + LEYEB_OFFSET
+            r = int(eb2 * MAX_EYEB) + REYEB_OFFSET
+
+        aseba.event("set_eyebrow", [l,r])
+
+
+    #@rosservice("halt")
+    def halt(self, arg=None):
         aseba.event("motor_stop")
 
-    @rosservice("leds/stop")
-    def stop_leds(arg):
+    #@rosservice("leds/stop")
+    def stop_leds(self, arg=None):
         aseba.event("set_led_effect", [NONE])
         return []
 
-    @rosservice("leds/glow_green")
-    def glow_green(arg):
+    #@rosservice("leds/glow_green")
+    def glow_green(self, arg= None):
         aseba.event("set_led_effect", [GLOW_GREEN])
         return []
 
-    @rosservice("leds/level_up")
-    def leds_level_up(arg):
+    #@rosservice("leds/level_up")
+    def leds_level_up(self, arg=None):
         aseba.event("set_led_effect", [LEVEL_UP])
         return []
 
-    @rosservice("leds/level_down")
-    def leds_level_down(arg):
+    #@rosservice("leds/level_down")
+    def leds_level_down(self, arg=None):
         aseba.event("set_led_effect", [LEVEL_DOWN])
         return []
 
-    @rosservice("leds/pulse_green")
-    def pulse_low_green(arg):
+    #@rosservice("leds/pulse_green")
+    def pulse_low_green(self, arg=None):
         aseba.event("set_led_effect", [PULSE_LOW_GREEN])
         return []
 
-    @rosservice("leds/pulse_red")
-    def pulse_low_red(arg):
+    #@rosservice("leds/pulse_red")
+    def pulse_low_red(self, arg=None):
         aseba.event("set_led_effect", [PULSE_LOW_RED])
         return []
 
-    @rosservice("leds/blush")
-    def blush(arg):
+    #@rosservice("leds/blush")
+    def blush(self, arg=None):
         aseba.event("set_led_effect", [BLUSH])
         return []
 
-    @rosservice("leds/sparkle")
-    def sparkle(arg):
+    #@rosservice("leds/sparkle")
+    def sparkle(self, arg=None):
         aseba.event("set_led_effect", [SPARKLE])
         return []
