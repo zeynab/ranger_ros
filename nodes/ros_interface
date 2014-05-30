@@ -6,6 +6,7 @@ import rospy
 from geometry_msgs.msg import Quaternion, Twist
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from sensor_msgs.msg import Range
 from tf.broadcaster import TransformBroadcaster
 
 import ranger
@@ -20,6 +21,32 @@ r = rospy.Rate(RATE)
 odomPub = rospy.Publisher("odom", Odometry)
 odomBroadcaster = TransformBroadcaster()
 
+irPub = [rospy.Publisher("ir_left", Range),
+         rospy.Publisher("ir_center", Range),
+         rospy.Publisher("ir_right", Range)]
+
+range_left = Range()
+range_left.header.frame_id = "ir_left"
+range_left.radiation_type = Range.INFRARED
+range_left.field_of_view = 0.2 # ~10deg
+range_left.min_range = 0.025 # according to my measurments
+range_left.max_range = 0.30 # according to my measurments
+
+range_center = Range()
+range_center.header.frame_id = "ir_center"
+range_center.radiation_type = Range.INFRARED
+range_center.field_of_view = 0.2 # ~10 deg
+range_center.min_range = 0.35 # according to my measurments
+range_center.max_range = 2.0 # according to my measurments
+
+range_right = Range()
+range_right.header.frame_id = "ir_right"
+range_right.radiation_type = Range.INFRARED
+range_right.field_of_view = 0.2 # ~10deg
+range_right.min_range = 0.025 # according to my measurments
+range_right.max_range = 0.30 # according to my measurments
+
+
 
 with ranger.Ranger() as robot:
 
@@ -29,15 +56,19 @@ with ranger.Ranger() as robot:
         robot.speed(v = msg.linear.x, w = msg.angular.z)
 
     cmd_vel = rospy.Subscriber("cmd_vel", Twist, command_cb)
+
+    state = robot.state
+
     while not rospy.is_shutdown():
         now = rospy.Time.now()
 
         # we get all the state once to ensure (as much as possible) temporal
         # consistency
-        x, y, theta = robot.state.x, robot.state.y, robot.state.theta
-        v, w = robot.state.v, robot.state.w
+        x, y, theta = state.x, state.y, state.theta
+        v, w = state.v, state.w
+        ir_left, ir_center, ir_right = state.ir_left, state.ir_center, state.ir_right
 
-        # publish the odom information
+        # TF base_link
         quaternion = Quaternion()
         quaternion.x = 0.0
         quaternion.y = 0.0
@@ -51,6 +82,7 @@ with ranger.Ranger() as robot:
             ODOM_FRAME
             )
 
+        # ODOMETRY
         odom = Odometry()
         odom.header.stamp = now
         odom.header.frame_id = ODOM_FRAME
@@ -65,4 +97,15 @@ with ranger.Ranger() as robot:
 
         odomPub.publish(odom)
 
+        # IR SENSORS
+        range_left.range = ir_left
+        range_center.range = ir_center
+        range_right.range = ir_right
+        irPub[0].publish(range_left)
+        irPub[1].publish(range_center)
+        irPub[2].publish(range_right)
+
+
+
+        # DONE!
         r.sleep()
