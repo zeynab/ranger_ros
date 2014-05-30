@@ -19,3 +19,9 @@ install(DIRECTORY nodes/
 # Instructions to install launch files
 install(DIRECTORY launch/
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch )
+
+# Instructions to install configuration files
+install(DIRECTORY nav_conf/
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/nav_conf )
+install(DIRECTORY maps/
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/maps )

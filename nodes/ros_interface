@@ -25,6 +25,10 @@ with ranger.Ranger() as robot:
 
     rospy.loginfo("ROS Ranger interface started. Starting to broadcast odometry and TF transform of base_link")
 
+    def command_cb(msg):
+        robot.speed(v = msg.linear.x, w = msg.angular.z)
+
+    cmd_vel = rospy.Subscriber("cmd_vel", Twist, command_cb)
     while not rospy.is_shutdown():
         now = rospy.Time.now()
 
