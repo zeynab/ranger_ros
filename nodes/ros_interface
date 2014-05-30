@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+
+from math import sin, cos
+import rospy
+
+from geometry_msgs.msg import Quaternion, Twist
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+from tf.broadcaster import TransformBroadcaster
+
+import ranger
+
+RATE = 10 #Hz
+ODOM_FRAME = "odom"
+BASE_FRAME = "base_link"
+
+
+rospy.init_node('ranger_ros')
+r = rospy.Rate(RATE)
+odomPub = rospy.Publisher("odom", Odometry)
+odomBroadcaster = TransformBroadcaster()
+
+
+with ranger.Ranger() as robot:
+
+    rospy.loginfo("ROS Ranger interface started. Starting to broadcast odometry and TF transform of base_link")
+
+    while not rospy.is_shutdown():
+        now = rospy.Time.now()
+
+        # we get all the state once to ensure (as much as possible) temporal
+        # consistency
+        x, y, theta = robot.state.x, robot.state.y, robot.state.theta
+        v, w = robot.state.v, robot.state.w
+
+        # publish the odom information
+        quaternion = Quaternion()
+        quaternion.x = 0.0
+        quaternion.y = 0.0
+        quaternion.z = sin( theta / 2 )
+        quaternion.w = cos( theta / 2 )
+        odomBroadcaster.sendTransform(
+            (x, y, 0),
+            (quaternion.x, quaternion.y, quaternion.z, quaternion.w),
+            now,
+            BASE_FRAME,
+            ODOM_FRAME
+            )
+
+        odom = Odometry()
+        odom.header.stamp = now
+        odom.header.frame_id = ODOM_FRAME
+        odom.pose.pose.position.x = x
+        odom.pose.pose.position.y = y
+        odom.pose.pose.position.z = 0
+        odom.pose.pose.orientation = quaternion
+        odom.child_frame_id = BASE_FRAME
+        odom.twist.twist.linear.x = v
+        odom.twist.twist.linear.y = 0
+        odom.twist.twist.angular.z = w
+
+        odomPub.publish(odom)
+
+        r.sleep()

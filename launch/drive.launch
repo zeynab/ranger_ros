@@ -1,16 +1,20 @@
 <launch>
-  <param name="robot_description" textfile="$(find ranger_description)/ranger.urdf" />
-  <node pkg="ranger_ros" type="ros_interface" name="ranger_ros"/>
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /> 
-  <node pkg="differential_drive" type="diff_tf.py" name="diff_tf">
-     <rosparam param="rate">8.0</rosparam>
-     <rosparam param="ticks_meter">69049</rosparam>
-     <rosparam param="base_width">0.396</rosparam>
-  </node>
-  <node pkg="differential_drive" type="twist_to_motors.py" name="twist_to_motors">
-     <rosparam param="rate">50</rosparam>
-     <rosparam param="base_width">0.396</rosparam>
-     <remap from="twist" to="cmd_vel"/>
-  </node>
-  <node pkg="ranger_ros" type="teleop" name="ranger_teleop"/>
+    <param name="robot_description" textfile="$(find ranger_description)/urdf/ranger.urdf" />
+    <node pkg="ranger_ros" type="ros_interface" name="ranger_ros"/>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /> 
+    <!--
+    <node pkg="differential_drive" type="diff_tf.py" name="diff_tf">
+        <rosparam param="rate">8.0</rosparam>
+        <rosparam param="ticks_meter">69049</rosparam>
+        <rosparam param="base_width">0.396</rosparam>
+    </node>
+    <node pkg="differential_drive" type="twist_to_motors.py" name="twist_to_motors">
+        <rosparam param="rate">50</rosparam>
+        <rosparam param="base_width">0.396</rosparam>
+        <remap from="twist" to="cmd_vel"/>
+    </node>
+    -->
+    <!--
+    <node pkg="ranger_ros" type="teleop" name="ranger_teleop"/>
+    -->
 </launch>
