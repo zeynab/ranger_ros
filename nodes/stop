@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+
+import ranger
+
+with ranger.Ranger() as robot:
+    robot.stop()
+
