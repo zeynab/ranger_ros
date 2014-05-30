@@ -1,5 +1,7 @@
-obstacle_range: 1.5
-raytrace_range: 2.0
+global_frame: /map
+robot_base_frame: /base_link
+
 footprint: [[0.076, -0.16], [-0.24, -0.16], [-0.24, 0.16], [0.076, 0.16]]
-inflation_radius: 0.2
+
+
 
