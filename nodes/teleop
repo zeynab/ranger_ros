@@ -3,9 +3,6 @@
 import time
 import pygame
 import sys
-import roslib;roslib.load_manifest('ranger_ros')
-from ranger_ros.ranger import Ranger, PREFIX
-from ranger_ros.playwave import playwave, close_audio
 from geometry_msgs.msg import Twist
 import rospy
 import random
@@ -15,47 +12,11 @@ MAX_LINEAR_SPEED = 0.2 # m/s
 MAX_ANGULAR_SPEED = 0.4 # rad/s
 
 
-SOUND_LIBRARY = dict(TOY='0_curious_-_finding_toy.wav', 
-                     HAPPY1='1_happy_noise_-_parade-2.wav', 
-                     HAPPY2='2_happy_noise_-_parade.wav', 
-                     IRRITATED1='3_irritated-discharging-cut.wav', 
-                     IRRITATED2='4_irritated_-_obstacle_2.wav', 
-                     IRRITATED3='5_irritated_wrong_item.wav', 
-                     LOW_ENERGY='6_warning_-_low_energy.wav')
-
-
 rospy.init_node('ranger_teleop')
 twist = rospy.Publisher('/cmd_vel', Twist)
-ranger = Ranger()
 rospy.loginfo("ROS Ranger interface started")
 
 done = False
-
-def playsound(sound):
-    thr = threading.Thread(target=playwave, args=(PREFIX + "sounds/" + SOUND_LIBRARY[sound], ))
-    thr.start()
-
-def toy_near():
-    ranger.pulse_low_red()
-    ranger.eyes(0.2, -0.2)
-    ranger.eyebrows(-0.6, 0.6)
-    ranger.shake()
-    ranger.stop_leds()
-
-def toy_in():
-
-    ranger.leds_level_up()
-    if random.random() > 0.5:
-        playsound('HAPPY1')
-    else:
-        playsound('HAPPY2')
-
-
-def toy_out():
-
-    ranger.leds_level_down()
-    playsound('IRRITATED1')
-
 
 def key_callback(key_unicode):
     global done
@@ -94,7 +55,6 @@ joystick.init()
 
 
 #### WE ARE READY!
-playsound('TOY')
 
 v_prev = 0.0
 w_prev = 0.0
@@ -106,59 +66,16 @@ while not rospy.is_shutdown() and not done:
 
 
     if event.type == pygame.JOYBUTTONDOWN:
-        
-        if event.button == 4: # button LR (labeled 5 on joy)
-            rospy.loginfo("Motors enabled")
-            ranger.enable_motors()
 
-        elif event.button == 8:
+        if event.button == 8:
             print("Leaving now")
             done = True
-
-        elif event.button == 9:
-            ranger.stop_leds()
-
-        elif event.button == 0:
-            ranger.sparkle()
-
-        elif event.button == 1:
-            ranger.blush()
-
-        elif event.button == 2:
-            ranger.pulse_low_green()
-
-        elif event.button == 3:
-            toy_near()
-
-
-    elif event.type == pygame.JOYHATMOTION:
-        if event.value[1] == 1: # UP
-            toy_in()
-        elif event.value[1] == -1: # DOWN
-            toy_out()
-
-    elif event.type == pygame.JOYBUTTONUP:
-        if event.button == 4: # button LR (labeled 5 on joy)
-            rospy.loginfo("Motors disabled")
-            ranger.disable_motors()
 
     elif event.type == pygame.JOYAXISMOTION:
 
         if event.axis in [0,1]:
             w = -joystick.get_axis( 0 ) * MAX_ANGULAR_SPEED
             v = -joystick.get_axis( 1 ) * MAX_LINEAR_SPEED
-
-        elif event.axis == 2:
-            if joystick.get_button(5) and abs(event.value) > 0.01:
-                ranger.eyebrows(event.value, event.value)
-            elif joystick.get_button(6):
-                ranger.raweyes(event.value * 100, event.value * 100)
-            else:
-                ranger.eyes(event.value, event.value)
-        elif event.axis == 3 and abs(event.value) > 0.6:
-           if event.value < 0: # up
-                ranger.eyes(-0.4, 0.4)
-                ranger.eyebrows(-0.6, 0.6)
 
     elif event.type == pygame.KEYDOWN:
         rospy.logdebug('key down: {0}'.format(event))
@@ -167,7 +84,6 @@ while not rospy.is_shutdown() and not done:
 
     elif event.type == pygame.NOEVENT:
         clock.tick(20) # limit framerate to 20Hz
-        ranger.heartbeat()
 
 
     ###############
@@ -183,9 +99,6 @@ while not rospy.is_shutdown() and not done:
 
 
 ## Quitting...
-close_audio()
-ranger.stop_leds()
-ranger.halt()
 pygame.quit ()
 
 
