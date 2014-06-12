@@ -1,6 +1,6 @@
 local_costmap:
     update_frequency: 2.0
-    publish_frequency: 5.0
+    publish_frequency: 0.2 # every 5 secs only
 
     plugins:
         - {name: static_map, type: "costmap_2d::StaticLayer"}
@@ -15,5 +15,5 @@ local_costmap:
         clear_threshold: 0.2
         mark_threshold: 0.8
 
-    width: 4.0
-    height: 4.0
+    width: 1.0
+    height: 1.0

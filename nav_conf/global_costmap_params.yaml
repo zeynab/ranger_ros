@@ -1,6 +1,7 @@
 global_costmap:
 
-    update_frequency: 1.0
+    update_frequency: 0.2 # since this map *won't* be updated, no need to publish it often
+    publish_frequency: 0.2 # every 5 secs only
 
     plugins:
         - {name: static_map, type: "costmap_2d::StaticLayer"}

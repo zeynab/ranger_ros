@@ -12,14 +12,17 @@
 
         <param name="footprint_padding" value="0.01" />
         <param name="controller_frequency" value="10.0" />
-        <param name="controller_patience" value="100.0" />
+        <param name="controller_patience" value="5.0" />
         <param name="planner_frequency" value="2.0" />
+        <!--<param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS" />-->
+        <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
 
         <rosparam file="$(find ranger_ros)/nav_conf/costmap_common_params.yaml" command="load" ns="global_costmap" />
         <rosparam file="$(find ranger_ros)/nav_conf/costmap_common_params.yaml" command="load" ns="local_costmap" />
         <rosparam file="$(find ranger_ros)/nav_conf/local_costmap_params.yaml" command="load" />
         <rosparam file="$(find ranger_ros)/nav_conf/global_costmap_params.yaml" command="load" />
-        <rosparam file="$(find ranger_ros)/nav_conf/dwa_planner_ros.yaml" command="load" />
+        <rosparam file="$(find ranger_ros)/nav_conf/local_planner.yaml" command="load" ns="TrajectoryPlannerROS" />
+        <rosparam file="$(find ranger_ros)/nav_conf/local_planner.yaml" command="load" ns="DWAPlannerROS" />
     </node>
 
 </launch>
