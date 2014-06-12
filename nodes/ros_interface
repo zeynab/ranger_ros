@@ -18,12 +18,12 @@ BASE_FRAME = "base_link"
 
 rospy.init_node('ranger_ros')
 r = rospy.Rate(RATE)
-odomPub = rospy.Publisher("odom", Odometry)
+odomPub = rospy.Publisher("odom", Odometry, queue_size=1)
 odomBroadcaster = TransformBroadcaster()
 
-irPub = [rospy.Publisher("ir_left", Range),
-         rospy.Publisher("ir_center", Range),
-         rospy.Publisher("ir_right", Range)]
+irPub = [rospy.Publisher("ir_left", Range, queue_size=1),
+         rospy.Publisher("ir_center", Range, queue_size=1),
+         rospy.Publisher("ir_right", Range, queue_size=1)]
 
 range_left = Range()
 range_left.header.frame_id = "ir_left"
