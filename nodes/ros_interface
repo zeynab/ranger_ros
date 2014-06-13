@@ -15,16 +15,6 @@ RATE = 10 #Hz
 ODOM_FRAME = "odom"
 BASE_FRAME = "base_link"
 
-
-rospy.init_node('ranger_ros')
-r = rospy.Rate(RATE)
-odomPub = rospy.Publisher("odom", Odometry, queue_size=1)
-odomBroadcaster = TransformBroadcaster()
-
-irPub = [rospy.Publisher("ir_left", Range, queue_size=1),
-         rospy.Publisher("ir_center", Range, queue_size=1),
-         rospy.Publisher("ir_right", Range, queue_size=1)]
-
 range_left = Range()
 range_left.header.frame_id = "ir_left"
 range_left.radiation_type = Range.INFRARED
@@ -49,6 +39,16 @@ range_right.max_range = 0.30 # according to my measurments
 
 
 with ranger.Ranger() as robot:
+
+    r = rospy.Rate(RATE)
+
+    odomPub = rospy.Publisher("odom", Odometry, queue_size=1)
+    odomBroadcaster = TransformBroadcaster()
+
+    irPub = [rospy.Publisher("ir_left", Range, queue_size=1),
+            rospy.Publisher("ir_center", Range, queue_size=1),
+            rospy.Publisher("ir_right", Range, queue_size=1)]
+
 
     rospy.loginfo("ROS Ranger interface started. Starting to broadcast odometry and TF transform of base_link")
 
@@ -97,13 +97,14 @@ with ranger.Ranger() as robot:
 
         odomPub.publish(odom)
 
-        # IR SENSORS
-        range_left.range = ir_left
-        range_center.range = ir_center
-        range_right.range = ir_right
-        irPub[0].publish(range_left)
-        irPub[1].publish(range_center)
-        irPub[2].publish(range_right)
+        if robot.state.w < 0.5: # only publish IR sensor when not rotating too fast
+            # IR SENSORS
+            range_left.range = ir_left
+            range_center.range = ir_center
+            range_right.range = ir_right
+            irPub[0].publish(range_left)
+            irPub[1].publish(range_center)
+            irPub[2].publish(range_right)
 
 
 
