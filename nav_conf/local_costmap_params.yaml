@@ -1,19 +1,21 @@
 local_costmap:
-    update_frequency: 2.0
-    publish_frequency: 0.2 # every 5 secs only
+    update_frequency: 5.0
+    publish_frequency: 5.0
 
     plugins:
-        - {name: static_map, type: "costmap_2d::StaticLayer"}
+        #- {name: static_map, type: "costmap_2d::StaticLayer"}
         - {name: inflation, type: "costmap_2d::InflationLayer"}
         - {name: ir, type: "range_sensor_layer::RangeSensorLayer"}
 
     inflation:
-        inflation_radius: 0.05
+        inflation_radius: 0.2
 
     ir:
         topics: ["/ir_left", "/ir_center", "/ir_right"]
-        clear_threshold: 0.2
+        clear_threshold: 0.79
         mark_threshold: 0.8
 
-    width: 1.0
-    height: 1.0
+    width: 10.0
+    height: 10.0
+    origin_x: -5.0
+    origin_y: -5.0
