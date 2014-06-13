@@ -28,21 +28,21 @@ irPub = [rospy.Publisher("ir_left", Range, queue_size=1),
 range_left = Range()
 range_left.header.frame_id = "ir_left"
 range_left.radiation_type = Range.INFRARED
-range_left.field_of_view = 0.2 # ~10deg
+range_left.field_of_view = 0.4 # ~20deg
 range_left.min_range = 0.025 # according to my measurments
 range_left.max_range = 0.30 # according to my measurments
 
 range_center = Range()
 range_center.header.frame_id = "ir_center"
 range_center.radiation_type = Range.INFRARED
-range_center.field_of_view = 0.2 # ~10 deg
+range_center.field_of_view = 0.4 # ~20 deg
 range_center.min_range = 0.35 # according to my measurments
 range_center.max_range = 2.0 # according to my measurments
 
 range_right = Range()
 range_right.header.frame_id = "ir_right"
 range_right.radiation_type = Range.INFRARED
-range_right.field_of_view = 0.2 # ~10deg
+range_right.field_of_view = 0.4 # ~20deg
 range_right.min_range = 0.025 # according to my measurments
 range_right.max_range = 0.30 # according to my measurments
 
