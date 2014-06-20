@@ -11,7 +11,7 @@ from tf.broadcaster import TransformBroadcaster
 
 import ranger
 
-RATE = 10 #Hz
+RATE = 40 #Hz
 ODOM_FRAME = "odom"
 BASE_FRAME = "base_link"
 
