@@ -3,12 +3,23 @@ project(ranger_ros)
 
 # Find all required modules for compilation
 find_package(catkin REQUIRED COMPONENTS
+    roscpp
     tf
     geometry_msgs
-    nav_msgs)
+    nav_msgs
+    aseba
+    dashel)
+
 
 # Nothing that can be imported by other modules
 catkin_package()
+
+include_directories(${catkin_INCLUDE_DIRS})
+add_executable(ranger_odometry src/aseba.cpp src/ranger.cpp src/odometry.cpp)
+target_link_libraries(ranger_odometry ${catkin_LIBRARIES})
+
+install(TARGETS ranger_odometry
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION} )
 
 
 #And this will install python nodes
