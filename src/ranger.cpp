@@ -1,13 +1,24 @@
 #include <string>
+#include <functional> // std::bind
 
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 #include <nav_msgs/Odometry.h>
+#include <geometry_msgs/Twist.h>
 
 #include "aseba.h"
 #include "odometry.h"
 
 using namespace std;
+
+void set_speed(RangerAsebaBridge& aseba_node, 
+               RangerOdometry& odom, 
+               geometry_msgs::Twist::ConstPtr msg) {
+
+    auto speeds = odom.twist_to_motors(msg->linear.x, msg->angular.z);
+    aseba_node.setSpeed(speeds.first, speeds.second);
+
+}
 
 int main(int argc, char** argv){
     ros::init(argc, argv, "ranger_odometry_publisher");
@@ -15,7 +26,7 @@ int main(int argc, char** argv){
     ros::NodeHandle nh("~");
     string aseba_target = "";
     nh.getParam("aseba_target", aseba_target);
-    AsebaConnector aseba_node(aseba_target.c_str());
+    RangerAsebaBridge aseba_node(aseba_target.c_str());
     // check whether connection was successful
     if (!aseba_node.isValid())
     {
@@ -29,6 +40,9 @@ int main(int argc, char** argv){
     tf::TransformBroadcaster odom_broadcaster;
 
     RangerOdometry odom;
+
+    ros::Subscriber cmd_vel_sub = n.subscribe<geometry_msgs::Twist>("cmd_vel", 1, bind(set_speed, aseba_node, odom, _1));
+
 
     ros::Time current_time, last_time;
     current_time = ros::Time::now();

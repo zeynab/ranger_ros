@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
 # Nothing that can be imported by other modules
 catkin_package()
 
+add_definitions(-std=c++11)
 include_directories(${catkin_INCLUDE_DIRS})
 add_executable(ranger_odometry src/aseba.cpp src/ranger.cpp src/odometry.cpp)
 target_link_libraries(ranger_odometry ${catkin_LIBRARIES})
