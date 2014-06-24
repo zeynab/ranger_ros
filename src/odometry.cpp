@@ -126,7 +126,7 @@ Uses an approximation that works for small rotation speeds.
 
 Returns (left speed, right speed) in m.s^-1
 **/
-pair<double, double> RangerOdometry::twist_to_motors(double v, double w) {
+pair<double, double> RangerOdometry::twist_to_motors(double v, double w) const {
     // dx = (l + r) / 2
     // dr = (r - l) / w
     double left = v + w * base_width / 2;

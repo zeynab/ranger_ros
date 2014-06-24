@@ -38,7 +38,7 @@ public:
 
     Returns (left speed, right speed) in m.s^-1
     **/
-    std::pair<double, double> twist_to_motors(double v, double w);
+    std::pair<double, double> twist_to_motors(double v, double w) const;
 
 private:
 

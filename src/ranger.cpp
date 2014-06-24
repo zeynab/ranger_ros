@@ -1,5 +1,4 @@
 #include <string>
-#include <functional> // std::bind
 
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
@@ -9,16 +8,57 @@
 #include "aseba.h"
 #include "odometry.h"
 
+const double MAX_SPEED = .16; //m.s^-1 on the wheels for ranger2
+
 using namespace std;
 
-void set_speed(RangerAsebaBridge& aseba_node, 
-               RangerOdometry& odom, 
-               geometry_msgs::Twist::ConstPtr msg) {
 
-    auto speeds = odom.twist_to_motors(msg->linear.x, msg->angular.z);
-    aseba_node.setSpeed(speeds.first, speeds.second);
-
+template <typename T>
+T clamp(const T& n, const T& lower, const T& upper) {
+      return std::max(lower, std::min(n, upper));
 }
+
+class Ranger {
+
+public:
+
+    RangerOdometry odom;
+
+    Ranger(const string& aseba_target):aseba_node(aseba_target.c_str()) {
+        // check whether connection was successful
+        if (!aseba_node.isValid())
+        {
+            ROS_ERROR_STREAM("Could not connect to Aseba target " << aseba_target);
+            exit(1);
+        }
+        else {ROS_INFO_STREAM("Connected to Aseba target " << aseba_target);}
+    };
+
+    void step() {
+        aseba_node.Hub::step(); // check for incoming Aseba events
+
+        if (aseba_node.is_charging) {
+            odom.reset(0.35, 0., 0.);
+        }
+        else {
+            odom.update(aseba_node.l_encoder, aseba_node.r_encoder);
+        }
+    }
+
+    void set_speed(const geometry_msgs::Twist& msg) {
+
+        auto speeds = odom.twist_to_motors(msg.linear.x, msg.angular.z);
+        int lspeed = clamp<int>(speeds.first * 100./ MAX_SPEED, -100, 100);
+        int rspeed = clamp<int>(speeds.second * 100./ MAX_SPEED, -100, 100);
+
+        aseba_node.setSpeed(lspeed, -rspeed);
+
+    }
+
+private:
+    RangerAsebaBridge aseba_node;
+
+};
 
 int main(int argc, char** argv){
     ros::init(argc, argv, "ranger_odometry_publisher");
@@ -26,22 +66,14 @@ int main(int argc, char** argv){
     ros::NodeHandle nh("~");
     string aseba_target = "";
     nh.getParam("aseba_target", aseba_target);
-    RangerAsebaBridge aseba_node(aseba_target.c_str());
-    // check whether connection was successful
-    if (!aseba_node.isValid())
-    {
-        ROS_ERROR_STREAM("Could not connect to Aseba target " << aseba_target);
-        return 1;
-    }
-    else {ROS_INFO_STREAM("Connected to Aseba target " << aseba_target);}
+
+    Ranger ranger(aseba_target);
 
     ros::NodeHandle n;
     ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", 50);
     tf::TransformBroadcaster odom_broadcaster;
 
-    RangerOdometry odom;
-
-    ros::Subscriber cmd_vel_sub = n.subscribe<geometry_msgs::Twist>("cmd_vel", 1, bind(set_speed, aseba_node, odom, _1));
+    ros::Subscriber cmd_vel_sub = n.subscribe<const geometry_msgs::Twist&>("cmd_vel", 1, &Ranger::set_speed, &ranger);
 
 
     ros::Time current_time, last_time;
@@ -55,21 +87,16 @@ int main(int argc, char** argv){
     while(n.ok()){
 
         ros::spinOnce();               // check for incoming messages
-        aseba_node.Hub::step(); // check for incoming Aseba events
+        ranger.step();
+
         current_time = ros::Time::now();
 
-        if (aseba_node.is_charging) {
-            odom.reset(0.35, 0., 0.);
-        }
-        else {
-            odom.update(aseba_node.l_encoder, aseba_node.r_encoder);
-        }
 
-        x = odom.get_x();
-        y = odom.get_y();
-        th = odom.get_th();
-        dx = odom.get_dx();
-        dr = odom.get_dr();
+        x = ranger.odom.get_x();
+        y = ranger.odom.get_y();
+        th = ranger.odom.get_th();
+        dx = ranger.odom.get_dx();
+        dr = ranger.odom.get_dr();
 
         //since all odometry is 6DOF we'll need a quaternion created from yaw
         geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(th);

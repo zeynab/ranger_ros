@@ -67,7 +67,7 @@ void RangerAsebaBridge::setSpeed(int l_wheel, int r_wheel) {
 
 void RangerAsebaBridge::emit(int event, initializer_list<int> args) {
     UserMessage::DataVector data;
-    copy ( args.begin(), args.end(), data.begin() );
+    for (auto arg : args) {data.push_back(arg);}
     UserMessage userMessage(event, data);
     userMessage.serialize(targetStream);
     targetStream->flush();
