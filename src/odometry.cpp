@@ -1,6 +1,5 @@
 /** Compute odometry from encoders for the EPFL Ranger v2 robot
  **/
-
 #include <cmath>
 #include <cstddef> // NULL
 
@@ -11,10 +10,9 @@ using namespace std;
 RangerOdometry::RangerOdometry():
     enc_left(std::numeric_limits<int>::max()),
     enc_right(std::numeric_limits<int>::max()),
-    left(0), right(0),
     lmult(0), rmult(0),
     prev_lencoder(0), prev_rencoder(0),
-    x(0.), y(0.), th(0.), dx(0.), dr(0.)
+    _x(0.), _y(0.), _th(0.), _dx(0.), _dr(0.)
 {
 
     gettimeofday(&then, NULL);
@@ -32,14 +30,14 @@ void RangerOdometry::set_wheelradius(double radius) {
     ticks_meter = TICKS_360 / (2 * M_PI * radius);
 }
 
-void RangerOdometry::reset(float x, float y, float theta) {
-    enc_left = 0;        // wheel encoder readings
-    enc_right = 0;
-    x = x;                  // position in xy plane 
-    y = y;
-    th = theta;
-    dx = 0;                 // speeds in x/rotation
-    dr = 0;
+void RangerOdometry::reset(double x, double y, double theta) {
+    enc_left = std::numeric_limits<int>::max();        // wheel encoder readings
+    enc_right = std::numeric_limits<int>::max();
+    _x = x;                  // position in xy plane 
+    _y = y;
+    _th = theta;
+    _dx = 0;                 // speeds in x/rotation
+    _dr = 0;
     gettimeofday(&then, NULL);
 }
 
@@ -54,7 +52,7 @@ void RangerOdometry::update(int l_enc, int r_enc) {
         lmult = lmult - 1;
     }
 
-    left = 1.0 * (l_enc + lmult * (ENCODER_MAX - ENCODER_MIN));
+    int left = l_enc + lmult * (ENCODER_MAX - ENCODER_MIN);
     prev_lencoder = l_enc;
 
     // Right wheel
@@ -66,15 +64,15 @@ void RangerOdometry::update(int l_enc, int r_enc) {
         rmult = rmult - 1;
     }
 
-    right = 1.0 * (r_enc + rmult * (ENCODER_MAX - ENCODER_MIN));
+    int right = r_enc + rmult * (ENCODER_MAX - ENCODER_MIN);
     prev_rencoder = r_enc;
 
-    compute();
+    compute(left, right);
 }
 
 /** Compute (x, y, theta, v, w) for the robot (in meters, seconds and radians).
 **/
-void RangerOdometry::compute() {
+void RangerOdometry::compute(int left, int right) {
     struct timeval now;
     gettimeofday(&now, NULL);
 
@@ -88,8 +86,8 @@ void RangerOdometry::compute() {
     double d_left, d_right;
 
     if (enc_left == numeric_limits<int>::max()) {
-        d_left = 0;
-        d_right = 0;
+        d_left = 0.;
+        d_right = 0.;
     }
     else {
         d_left = (left - enc_left) / ticks_meter;
@@ -102,21 +100,22 @@ void RangerOdometry::compute() {
     double d = ( d_left + d_right ) / 2;
     // this approximation works (in radians) for small angles
     double delta_th = ( d_right - d_left ) / base_width;
+
     // calculate velocities
-    dx = d / elapsed;
-    dr = delta_th / elapsed;
+    _dx = d / elapsed;
+    _dr = delta_th / elapsed;
 
     if (d != 0) {
         // calculate distance traveled in x and y
-        double delta_x = cos( th ) * d;
-        double delta_y = -sin( th ) * d;
+        double delta_x = cos( delta_th ) * d;
+        double delta_y = -sin( delta_th ) * d;
         // calculate the final position of the robot
-        x = x + ( cos( th ) * delta_x - sin( th ) * delta_y );
-        y = y + ( sin( th ) * delta_x + cos( th ) * delta_y );
+        _x = _x + ( cos( _th ) * delta_x - sin( _th ) * delta_y );
+        _y = _y + ( sin( _th ) * delta_x + cos( _th ) * delta_y );
     }
 
     if (delta_th != 0) {
-        th = th + delta_th;
+        _th = _th + delta_th;
     }
 }
 

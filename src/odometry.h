@@ -22,15 +22,14 @@ public:
     RangerOdometry();
     void set_wheelbase(double wheelbase);
     void set_wheelradius(double radius);
-    void reset(float x = 0., float y = 0., float theta = 0.);
+    void reset(double x = 0., double y = 0., double theta = 0.);
     void update(int l_enc, int r_enc);
-    void compute();
 
-    double get_x() {return x;}
-    double get_y() {return y;}
-    double get_th() {return th;}
-    double get_dx() {return dx;}
-    double get_dr() {return dr;}
+    double get_x() const {return _x;}
+    double get_y() const {return _y;}
+    double get_th() const {return _th;}
+    double get_dx() const {return _dx;}
+    double get_dr() const {return _dr;}
 
     /** Returns the speed to apply on left and right motors for a 
     given (v, w) (in m.s^-1 and rad.s^-1).
@@ -44,13 +43,13 @@ public:
 private:
 
     int enc_left, enc_right;
-    int left, right;
     int lmult, rmult;
     int prev_lencoder, prev_rencoder;
-    double x, y, th;
-    double dx, dr;
+    double _x, _y, _th;
+    double _dx, _dr;
     struct timeval then;
     double base_width, ticks_meter;
 
+    void compute(int left, int right);
 
 };

@@ -58,7 +58,13 @@ int main(int argc, char** argv){
         aseba_node.Hub::step(); // check for incoming Aseba events
         current_time = ros::Time::now();
 
-        odom.update(aseba_node.l_encoder, aseba_node.r_encoder);
+        if (aseba_node.is_charging) {
+            odom.reset(0.35, 0., 0.);
+        }
+        else {
+            odom.update(aseba_node.l_encoder, aseba_node.r_encoder);
+        }
+
         x = odom.get_x();
         y = odom.get_y();
         th = odom.get_th();
