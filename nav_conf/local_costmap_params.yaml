@@ -1,19 +1,27 @@
 local_costmap:
     update_frequency: 5.0
-    publish_frequency: 5.0
+    publish_frequency: 2.0
 
     plugins:
         #- {name: static_map, type: "costmap_2d::StaticLayer"}
         - {name: inflation, type: "costmap_2d::InflationLayer"}
-        - {name: ir, type: "range_sensor_layer::RangeSensorLayer"}
+        #- {name: ir, type: "range_sensor_layer::RangeSensorLayer"}
+        - {name: obstacles, type: "costmap_2d::ObstacleLayer"}
 
     inflation:
         inflation_radius: 0.2
 
-    ir:
-        topics: ["/ir_left", "/ir_center", "/ir_right"]
-        clear_threshold: 0.79
-        mark_threshold: 0.8
+    obstacle:
+        observation_sources: scan
+        scan: {data_type: LaserScan, 
+               sensor_frame: /depth_camera_link, 
+               clearing: true, 
+               marking: true,
+               topic: /scan}
+    #ir:
+    #    topics: ["/ir_left", "/ir_center", "/ir_right"]
+    #    clear_threshold: 0.79
+    #    mark_threshold: 0.8
 
     width: 10.0
     height: 10.0

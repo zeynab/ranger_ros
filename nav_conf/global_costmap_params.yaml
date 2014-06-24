@@ -1,19 +1,19 @@
 global_costmap:
 
-    update_frequency: 1.
-    publish_frequency: 0.2 # every 5 secs only
+    update_frequency: 2.
+    publish_frequency: 1.
 
     plugins:
         - {name: static_map, type: "costmap_2d::StaticLayer"}
         - {name: inflation, type: "costmap_2d::InflationLayer"}
-        - {name: ir, type: "range_sensor_layer::RangeSensorLayer"}
+        #- {name: ir, type: "range_sensor_layer::RangeSensorLayer"}
 
     inflation:
         inflation_radius: 0.2
 
-    ir:
-        topics: ["/ir_left", "/ir_center", "/ir_right"]
-        clear_threshold: 0.2
-        mark_threshold: 0.8
+    #ir:
+    #    topics: ["/ir_left", "/ir_center", "/ir_right"]
+    #    clear_threshold: 0.2
+    #    mark_threshold: 0.8
 
 

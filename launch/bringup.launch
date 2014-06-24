@@ -1,0 +1,7 @@
+<launch>
+    <param name="robot_description" textfile="$(find ranger_description)/urdf/ranger.urdf" />
+    <!-- odometry + cmd_vel -->
+    <node pkg="ranger_ros" type="ranger_motors" name="ranger_motors"/>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /> 
+    <include file="$(find ranger_ros)/launch/3dsensor.launch"/>
+</launch>

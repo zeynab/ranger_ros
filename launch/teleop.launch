@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find ranger_ros)/launch/bringup.launch"/>
+    <node pkg="ranger_ros" type="teleop" name="ranger_teleop"/>
+</launch>
