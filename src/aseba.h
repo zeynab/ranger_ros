@@ -4,10 +4,9 @@
 
 #include <vector>
 #include <string>
-#include <initializer_list>
 
 #include <dashel/dashel.h>
-#include "common/msg/descriptions-manager.h"
+#include <aseba/common/msg/descriptions-manager.h>
 
 const int RANGER_MAIN_FEEDBACK_WITH_ENCODERS_EVENT=1;
 const int RANGER_SET_SPEED_EVENT=4;
@@ -36,7 +35,7 @@ protected:
     // reimplemented from parent classes
     virtual void incomingData(Dashel::Stream *stream);
 
-    void emit(int event, std::initializer_list<int> args);
+    void emit(int event, std::vector<int> args);
     void emit(int event, const std::vector<std::string>& args);
 };
 

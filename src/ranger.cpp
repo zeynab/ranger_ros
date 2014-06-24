@@ -1,10 +1,10 @@
 #include <string>
+#include <utility> // std::pair
 
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
-
 #include "aseba.h"
 #include "odometry.h"
 
@@ -47,7 +47,7 @@ public:
 
     void set_speed(const geometry_msgs::Twist& msg) {
 
-        auto speeds = odom.twist_to_motors(msg.linear.x, msg.angular.z);
+        pair<double, double> speeds = odom.twist_to_motors(msg.linear.x, msg.angular.z);
         int lspeed = clamp<int>(speeds.first * 100./ MAX_SPEED, -100, 100);
         int rspeed = clamp<int>(speeds.second * 100./ MAX_SPEED, -100, 100);
 

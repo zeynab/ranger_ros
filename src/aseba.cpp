@@ -62,12 +62,15 @@ void RangerAsebaBridge::incomingData(Dashel::Stream *stream)
 }
 
 void RangerAsebaBridge::setSpeed(int l_wheel, int r_wheel) {
-    emit(RANGER_SET_SPEED_EVENT, {l_wheel, r_wheel});
+    vector<int> speeds;
+    speeds.push_back(l_wheel);
+    speeds.push_back(r_wheel);
+    emit(RANGER_SET_SPEED_EVENT, speeds);
 }
 
-void RangerAsebaBridge::emit(int event, initializer_list<int> args) {
+void RangerAsebaBridge::emit(int event, vector<int> args) {
     UserMessage::DataVector data;
-    for (auto arg : args) {data.push_back(arg);}
+    for (vector<int>::iterator it = args.begin() ; it != args.end(); ++it) {data.push_back(*it);}
     UserMessage userMessage(event, data);
     userMessage.serialize(targetStream);
     targetStream->flush();
