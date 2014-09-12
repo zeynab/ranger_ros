@@ -19,3 +19,7 @@ Dependencies
 
 + ROS 2D SLAM and navigation tools (`gmapping`, `amcl`, `move_base`...)
 
+Technical checks
+----------------
+
+- Checking the odometry is ok: run `rqt_plot` + Ranger's `teleop`, plot `/cmd_vel/linear/x`, `/cmd_vel/angular/z`, `/odom/twist/linear/x` and `/odom/twist/linear/z` and check everyone match.
