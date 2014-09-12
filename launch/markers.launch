@@ -1,0 +1,18 @@
+<launch>
+  <arg name="name"  value="marker"/>
+  <arg name="manager" value="$(arg name)_nodelet_manager" />
+
+  <group ns="$(arg name)">
+    <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager"/>
+    <node pkg="nodelet" type="nodelet" name="openni2_camera" args="load openni2_camera/OpenNI2DriverNodelet $(arg manager)">
+    </node>
+
+    <!-- Chilitags marker detection -->
+    <node pkg="nodelet" type="nodelet" name="marker_detection" args="load ros_markers/detector $(arg manager)">
+          <param name="default_marker_size" value="140"/>
+          <param name="camera_frame_id" value="rgb_camera_link"/>
+      	<remap from="image" to="rgb/image" />
+    </node>
+
+  </group>
+</launch>
