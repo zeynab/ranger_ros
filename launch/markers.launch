@@ -3,7 +3,7 @@
   <arg name="manager" value="$(arg name)_nodelet_manager" />
 
   <group ns="$(arg name)">
-    <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager"/>
+    <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen"/>
     <node pkg="nodelet" type="nodelet" name="openni2_camera" args="load openni2_camera/OpenNI2DriverNodelet $(arg manager)">
     </node>
 
