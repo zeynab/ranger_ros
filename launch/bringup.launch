@@ -1,9 +1,20 @@
-<launch>
-    <param name="robot_description" textfile="$(find ranger_description)/urdf/ranger.urdf" />
+<!--<launch>
+    <param name="robot_description" textfile="$(find ranger_description)/urdf/ranger.urdf" /> -->
     <!-- odometry + cmd_vel. Map is published as well. Comment the line below if you are using localization -->
-    <node name="map_odom_transform" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 /map /odom 10"/>
+    <!--<node name="map_odom_transform" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 /map /odom 10"/>
     <node pkg="ranger_ros" type="ranger_motors" name="ranger_motors">
 	<param name="aseba_target" value="tcp:localhost;port=11311" />
     </node>
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /> 
-</launch>
+</launch>-->
+
+
+<launch>
+    <param name="robot_description" textfile="$(find ranger_description)/urdf/ranger.urdf" />
+    <!-- odometry + cmd_vel -->
+    <node pkg="ranger_ros" type="ranger_motors" name="ranger_motors">
+        <param name="aseba_target" value="tcp:localhost;33333" />
+    </node>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+    <include file="$(find ranger_ros)/launch/3dsensor.launch"/>
+</launch>      
