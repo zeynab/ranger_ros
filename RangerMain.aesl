@@ -1,0 +1,250 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+<event size="16" name="mainFeedback"/>
+<event size="20" name="mainFeedbackWithEncoders"/>
+<event size="3" name="setLed"/>
+<event size="10" name="receiverFeedback"/>
+<event size="2" name="setSpeed"/>
+<event size="1" name="enableEncoders"/>
+<event size="2" name="playLedVid"/>
+<event size="0" name="stopLedVid"/>
+<event size="4" name="neuilFeedback"/>
+<event size="8" name="neuilEvent"/>
+<event size="10" name="customEvent"/>
+<event size="7" name="emitterEvent"/>
+<event size="1" name="enableFeedback"/>
+
+
+<!--list of constants-->
+<constant value="600" name="CURRENT_LIMIT"/>
+
+
+<!--show keywords state-->
+<keywords flag="true"/>
+
+
+<!--node RangerMain-->
+<node nodeId="1" name="RangerMain">var touchBuffer[2]
+var i
+var j
+var timer = 0
+var encoderEnabled = 1 # was 0 before but wouldn't work properly
+var playingVid = 0
+var repeatVid = 0
+var TouchRight
+var TouchLeft
+var TouchRear
+var Bumper = 0
+var mainFeedbackEnable = 1 # was 0 before but wouldn't work properly
+
+mot1.pid.current_max = 700
+mot2.pid.current_max = 700
+
+mot1.pid._kp_s = 35
+mot1.pid._ki_s = 5
+mot2.pid._kp_s = 35
+mot2.pid._ki_s = 5
+
+# switch off all leds
+for i in 0:185 do
+	call led.set(i, 0, 0, 0)
+end
+
+touch._disable = 0
+
+# stop motors
+mot1.pid.enable = 1
+mot1.pid.target_current = 0
+mot1.pid.target_speed = 0
+mot2.pid.enable = 1
+mot2.pid.target_current = 0
+mot2.pid.target_speed = 0
+
+onevent setLed
+for i in 0:185 do
+  call led.set(i, event.args[0], event.args[1], event.args[2])
+end
+
+# Bumper computed either via the physical bumper or with the motor current
+sub computeBumper
+if bumper == 1 or mot1.pid.target_current > CURRENT_LIMIT or mot1.pid.target_current &lt; -CURRENT_LIMIT or mot2.pid.target_current > CURRENT_LIMIT or mot2.pid.target_current &lt; -CURRENT_LIMIT then
+	Bumper = 1
+else
+	Bumper = 0
+end
+
+# Compress touchSensors in order to use only one variable by pannel
+sub touchCompress
+TouchRight = 0
+TouchLeft = 0
+TouchRear = 0
+j = 1
+for i in 0:8 do
+	TouchRight += touch.right[i]*j
+	TouchLeft  += touch.left[i]*j
+	TouchRear  += touch.rear[i]*j
+	j *= 2
+end
+
+
+#event acc used to send data
+onevent acc
+if vbat &lt; 6500 then
+	for i in 0:5 do
+		call led.set(i, 255, 0, 0)
+	end
+end
+if mainFeedbackEnable != 0 then
+	callsub touchCompress
+	callsub computeBumper
+	if encoderEnabled == 1 then
+		emit mainFeedbackWithEncoders[acc, sharp, vbat, Bumper, scales.median, mot1.speed, mot2.speed, TouchRight, TouchLeft, TouchRear, mot1.enc._pulse, mot2.enc._pulse, _status.ExtPower, mot1._raw_current, -mot2._raw_current]
+	else
+		emit mainFeedback[acc, sharp, vbat, Bumper, scales.median, mot1.speed, mot2.speed, TouchRight, TouchLeft, TouchRear, _status.ExtPower, mot1._raw_current, -mot2._raw_current]
+	end
+end
+#if _status.ExtPower == 1 then
+#	call led.vid.stop()
+#end
+
+
+onevent setSpeed
+if event.args[0] == 0 and event.args[1] == 0 then
+	mot1.pid.target_speed = 0
+	mot1.pid.enable = 1
+	mot1.pid.target_current = 0
+	mot2.pid.target_speed = 0
+	mot2.pid.enable = 1
+	mot2.pid.target_current = 0
+else
+	mot1.pid.enable = 2
+	mot1.pid.target_speed = event.args[0]
+	mot2.pid.enable = 2
+	mot2.pid.target_speed = event.args[1]
+end
+
+onevent enableEncoders
+encoderEnabled = event.args[0]
+
+onevent playLedVid
+repeatVid = 0
+call led.vid.stop()
+playingVid = event.args[0]
+repeatVid = event.args[1]
+call led.vid.start(playingVid)
+
+onevent led # Video is finished
+if repeatVid == 1 then
+	call led.vid.start(playingVid)
+else
+	call led.vid.stop()
+end
+
+onevent stopLedVid
+call led.vid.stop()
+repeatVid = 0
+
+onevent enableFeedback
+mainFeedbackEnable = event.args[0]
+
+
+</node>
+
+
+<!--node rab2-->
+<node nodeId="7" name="rab2">var rabFeedbackEnable = 0
+var c
+rf.swarm_size = 25
+rf.slot_time = 4000
+rx.power.en = 1
+tx.power.en = 1
+call rf.start()
+
+
+onevent packet.rx
+if rabFeedbackEnable != 0 then
+	emit receiverFeedback[rx.source, rx.angle, rx.dist, rx.data]
+end
+
+
+onevent emitterEvent
+for c in 0:6 do
+	rf.tx_data[c] = event.args[c]
+end
+
+onevent enableFeedback
+rabFeedbackEnable = event.args[0]
+</node>
+
+
+<!--node neuil-->
+<node nodeId="15" name="neuil">var mainFeedbackEnable = 0
+
+# Just for Neuil init in order to move the pupils slowly; the magnets can be "englued" and lossed
+var initNeuil = 1
+var a = 0
+var da = 4
+var Rmax = 360
+var dR = 4
+var R = 1
+var i
+
+timer[0] = 50
+timer[1] = 100
+
+sharp.enable[0] = 1
+sharp.enable[1] = 1
+sharp.enable[2] = 1
+
+for i in 0:3 do
+call eyelid.set (i,100)
+end
+
+onevent timer0
+if initNeuil == 1 then
+	if R > Rmax then
+		R = 0
+		dR = 0
+		initNeuil = 0
+	end
+	call eye.polar_set(0,R,a)
+	call eye.polar_set(1,R,360-a)
+
+	for i in 0:3 do
+		call eyelid.set (i,100-R%180)
+	end
+
+	R+=dR
+	a+=da
+	if a &lt; 0 then
+		a = 360
+	else
+		a%=360
+	end
+end
+
+# feedback
+onevent timer1
+if mainFeedbackEnable != 0 then
+	emit neuilFeedback [sharp.value, lolette]
+end
+
+onevent enableFeedback
+mainFeedbackEnable = event.args[0]
+
+# command received
+# David: I have adapted this quickly to the new version of the robot, this need to be checked and can be extended
+onevent neuilEvent
+for i in 0:1 do
+	call eye.cartesian_set(i, event.args[2*i], event.args[2*i+1])
+end
+for i in 0:3 do
+	call eyelid.set(i, event.args[i+3])
+end
+</node>
+
+
+</network>
